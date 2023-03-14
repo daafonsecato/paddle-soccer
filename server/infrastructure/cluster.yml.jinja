@@ -14,13 +14,13 @@ limitations under the License.
 #}
 
 resources:
-- name: soccer-{{ properties["zone"] }}
+- name: soccer-{{ properties['zone'] }}
   type: container.v1.cluster
   properties:
-    zone: {{ properties["zone"] }}
+    zone: {{ properties['zone'] }}
     cluster:
-      name: soccer-{{ properties["zone"] }}
-      description: side server cluster for soccer multiplayer, in zone {{ properties["zone"] }}
+      name: soccer-{{ properties['zone'] }}
+      description: side server cluster for soccer multiplayer, in zone {{ properties['zone'] }}
       nodePools:
         - name: "apps"
           initialNodeCount: 3
@@ -43,8 +43,37 @@ resources:
             oauthScopes:
               - https://www.googleapis.com/auth/devstorage.read_only
       masterAuth:
-        username: admin
-        password: supersecret
+        username: {{ properties['master-username'] }}
+        password: {{ properties['master-password'] }}
+      addonsConfig:
+        httpLoadBalancing: {}
+        kubernetesDashboard: {disabled: true}
+        networkPolicyConfig: {}
+      legacyAbac: {enabled: false}
+      networkPolicy: {enabled: true}
+      masterAuthorizedNetworksConfig:
+        enabled: true
+        cidrBlocks: {{ properties['master-authorized-networks']|safe }}
+      privateClusterConfig:
+        enablePrivateNodes: true
+        masterIpv4CidrBlock: {{ properties['master-ipv4-cidr'] }}
+      locations:
+      - {{ properties['zone'] }}
+      authenticatorGroupsConfig:
+        enabled: true
+        securityGroup: {{ properties['oidc-group'] }}
+      clusterAuthConfig:
+        oidcConfig:
+          issuerUrl: {{ properties['oidc-issuer-url'] }}
+          clientId: {{ properties['oidc-client-id'] }}
+          usernameClaim: {{ properties['oidc-username-claim'] }}
+          usernamePrefix: {{ properties['oidc-username-prefix'] }}
+          groupsClaim: {{ properties['oidc-groups-claim'] }}
+          groupsPrefix: {{ properties['oidc-groups-prefix'] }}
+          signingAlgs: {{ properties['oidc-signing-algs']|safe }}
+      ipAllocationPolicy:
+        createSubnetwork: true
+        useIpAliases: true
 - name: game-server-firewall
   type: compute.v1.firewall
   properties:
@@ -55,3 +84,4 @@ resources:
       - IPProtocol: udp
         ports:
           - "7000-8000"
+
